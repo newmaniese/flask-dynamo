@@ -138,7 +138,7 @@ class Dynamo(object):
 
         We'll error out if the tables can't be created for some reason.
         """
-        for table_name, table in self.tables.iteritems():
+        for table_name, table in self.tables.items():
             Table.create(
                 table_name = table.table_name,
                 schema = table.schema,
@@ -154,5 +154,5 @@ class Dynamo(object):
 
         We'll error out if the tables can't be destroyed for some reason.
         """
-        for table_name, table in self.tables.iteritems():
+        for table_name, table in self.tables.items():
             table.delete()
