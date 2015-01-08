@@ -33,20 +33,20 @@ class Dynamo(object):
 
         :param obj app: The Flask application.
         """
-        self.init_settings()
-        self.check_settings()
+        self.init_settings(app or app.config)
+        self.check_settings(app or app.config)
 
-    def init_settings(self):
+    def init_settings(self, app):
         """Initialize all of the extension settings."""
-        self.app.config.setdefault('DYNAMO_TABLES', [])
-        self.app.config.setdefault('DYNAMO_ENABLE_LOCAL', environ.get('DYNAMO_ENABLE_LOCAL', False))
-        self.app.config.setdefault('DYNAMO_LOCAL_HOST', environ.get('DYNAMO_LOCAL_HOST'))
-        self.app.config.setdefault('DYNAMO_LOCAL_PORT', environ.get('DYNAMO_LOCAL_PORT'))
-        self.app.config.setdefault('AWS_ACCESS_KEY_ID', environ.get('AWS_ACCESS_KEY_ID'))
-        self.app.config.setdefault('AWS_SECRET_ACCESS_KEY', environ.get('AWS_SECRET_ACCESS_KEY'))
-        self.app.config.setdefault('AWS_REGION', environ.get('AWS_REGION', self.DEFAULT_REGION))
+        app.config.setdefault('DYNAMO_TABLES', [])
+        app.config.setdefault('DYNAMO_ENABLE_LOCAL', environ.get('DYNAMO_ENABLE_LOCAL', False))
+        app.config.setdefault('DYNAMO_LOCAL_HOST', environ.get('DYNAMO_LOCAL_HOST'))
+        app.config.setdefault('DYNAMO_LOCAL_PORT', environ.get('DYNAMO_LOCAL_PORT'))
+        app.config.setdefault('AWS_ACCESS_KEY_ID', environ.get('AWS_ACCESS_KEY_ID'))
+        app.config.setdefault('AWS_SECRET_ACCESS_KEY', environ.get('AWS_SECRET_ACCESS_KEY'))
+        app.config.setdefault('AWS_REGION', environ.get('AWS_REGION', self.DEFAULT_REGION))
 
-    def check_settings(self):
+    def check_settings(self, app):
         """
         Check all user-specified settings to ensure they're correct.
 
@@ -54,13 +54,13 @@ class Dynamo(object):
 
         :raises: ConfigurationError
         """
-        if not self.app.config['DYNAMO_TABLES']:
+        if not app.config['DYNAMO_TABLES']:
             raise ConfigurationError('You must specify at least one Dynamo table to use.')
 
-        if not (self.app.config['AWS_ACCESS_KEY_ID'] and self.app.config['AWS_SECRET_ACCESS_KEY']):
+        if not (app.config['AWS_ACCESS_KEY_ID'] and app.config['AWS_SECRET_ACCESS_KEY']):
             raise ConfigurationError('You must specify your AWS credentials.')
 
-        if self.app.config['DYNAMO_ENABLE_LOCAL'] and not (self.app.config['DYNAMO_LOCAL_HOST'] and self.app.config['DYNAMO_LOCAL_PORT']):
+        if app.config['DYNAMO_ENABLE_LOCAL'] and not (app.config['DYNAMO_LOCAL_HOST'] and app.config['DYNAMO_LOCAL_PORT']):
             raise ConfigurationError('If you have enabled Dynamo local, you must specify the host and port.')
 
     @property
