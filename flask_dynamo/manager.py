@@ -11,7 +11,6 @@ from flask import (
 
 from .errors import ConfigurationError
 
-
 class Dynamo(object):
     """DynamoDB wrapper for Flask."""
 
@@ -63,6 +62,20 @@ class Dynamo(object):
         if app.config['DYNAMO_ENABLE_LOCAL'] and not (app.config['DYNAMO_LOCAL_HOST'] and app.config['DYNAMO_LOCAL_PORT']):
             raise ConfigurationError('If you have enabled Dynamo local, you must specify the host and port.')
 
+    def get_app(self, reference_app=None):
+        """Helper method that implements the logic to look up an application.
+        """
+        if reference_app is not None:
+            return reference_app
+        if self.app is not None:
+            return self.app
+        ctx = stack.top
+        if ctx is not None:
+            return ctx.app
+        raise RuntimeError('application not registered on db '
+                           'instance and no application bound '
+                           'to current context')
+
     @property
     def connection(self):
         """
@@ -74,12 +87,13 @@ class Dynamo(object):
         ctx = stack.top
         if ctx is not None:
             if not hasattr(ctx, 'dynamo_connection'):
+                app = self.get_app()
                 kwargs = {
-                    'aws_access_key_id': self.app.config['AWS_ACCESS_KEY_ID'],
-                    'aws_secret_access_key': self.app.config['AWS_SECRET_ACCESS_KEY'],
-                    'host': self.app.config['DYNAMO_LOCAL_HOST'] if self.app.config['DYNAMO_ENABLE_LOCAL'] else None,
-                    'port': int(self.app.config['DYNAMO_LOCAL_PORT']) if self.app.config['DYNAMO_ENABLE_LOCAL'] else None,
-                    'is_secure': False if self.app.config['DYNAMO_ENABLE_LOCAL'] else True,
+                    'aws_access_key_id': app.config['AWS_ACCESS_KEY_ID'],
+                    'aws_secret_access_key': app.config['AWS_SECRET_ACCESS_KEY'],
+                    'host': app.config['DYNAMO_LOCAL_HOST'] if app.config['DYNAMO_ENABLE_LOCAL'] else None,
+                    'port': int(app.config['DYNAMO_LOCAL_PORT']) if app.config['DYNAMO_ENABLE_LOCAL'] else None,
+                    'is_secure': False if app.config['DYNAMO_ENABLE_LOCAL'] else True,
                 }
 
                 # If DynamoDB local is disabled, we'll remove these settings.
@@ -88,7 +102,7 @@ class Dynamo(object):
                 if not kwargs['port']:
                     del kwargs['port']
 
-                ctx.dynamo_connection = connect_to_region(self.app.config['AWS_REGION'], **kwargs)
+                ctx.dynamo_connection = connect_to_region(app.config['AWS_REGION'], **kwargs)
 
             return ctx.dynamo_connection
 
@@ -103,8 +117,9 @@ class Dynamo(object):
         ctx = stack.top
         if ctx is not None:
             if not hasattr(ctx, 'dynamo_tables'):
+                app = self.get_app()
                 ctx.dynamo_tables = {}
-                for table in self.app.config['DYNAMO_TABLES']:
+                for table in app.config['DYNAMO_TABLES']:
                     table.connection = self.connection
                     ctx.dynamo_tables[table.table_name] = table
 
