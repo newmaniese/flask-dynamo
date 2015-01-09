@@ -142,10 +142,13 @@ class Dynamo(object):
         :returns: A Table object if the table was found.
         :raises: AttributeError on error.
         """
+
+        if hasattr(self, name):
+            return getattr(self, name)
+
         if name in self.tables:
             return self.tables[name]
-
-        raise AttributeError('No table named %s found.' % name)
+        raise AttributeError
 
     def create_all(self):
         """
